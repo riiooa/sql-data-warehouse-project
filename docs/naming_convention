@@ -1,0 +1,81 @@
+# **Naming Conventions for PostgreSQL Data Warehouse**
+
+This document outlines the naming standards and conventions used for schemas, tables, views, columns, and other database objects within this Data Warehouse project.
+
+---
+
+## **1. General Principles**
+
+- **Case Sensitivity**: PostgreSQL defaults to lowercase for all object names. Therefore, we use **snake_case** (all lowercase letters with underscores `_` as separators).
+- **Language**: English is used for all object names to ensure consistency and alignment with industry standards.
+- **Reserved Words**: Avoid using SQL reserved keywords (e.g., `select`, `table`, `order`, `date`, `user`) as object or column names.
+- **Schema Qualification**: Always use the schema prefix when referencing tables (e.g., `silver.crm_cust_info`) to ensure clarity across layers.
+
+---
+
+## **2. Table Naming Conventions**
+
+
+
+### **Bronze Layer (Raw Data)**
+- Table names must reflect the original source system and entity name without structural changes.
+- **Format**: `<sourcesystem>_<entity>`
+  - `<sourcesystem>`: Origin system code (e.g., `crm`, `erp`).
+  - `<entity>`: Original table name from the source.
+  - **Example**: `bronze.crm_sales_details`, `bronze.erp_loc_a101`.
+
+### **Silver Layer (Cleansed Data)**
+- Table names remain consistent with the source name to maintain data lineage, even though the data inside is standardized.
+- **Format**: `<sourcesystem>_<entity>`
+  - **Example**: `silver.crm_cust_info`, `silver.erp_px_cat_q1v2`.
+
+### **Gold Layer (Business/Presentation Layer)**
+- Uses meaningful, business-aligned names following the **Star Schema** pattern.
+- **Format**: `<category>_<entity>`
+  - `<category>`: The role of the table (`dim` for Dimensions, `fact` for Facts).
+  - `<entity>`: Descriptive business domain name (e.g., `customers`, `products`).
+
+| Pattern | Meaning | Example |
+| :--- | :--- | :--- |
+| `dim_` | Dimension Table (Support data) | `gold.dim_customers`, `gold.dim_products` |
+| `fact_` | Fact Table (Transactional data) | `gold.fact_sales` |
+| `report_` | View created for specific reports | `gold.report_monthly_sales` |
+
+---
+
+## **3. Column Naming Conventions**
+
+### **Surrogate Keys (Gold Layer)**
+- All primary keys in dimension tables must use the `_key` suffix to distinguish them from source IDs.
+- **Format**: `<entity>_key`
+  - **Example**: `customer_key` in the `dim_customers` table.
+
+### **Business Keys (Silver Layer)**
+- Original keys from source systems are maintained with their original names or standardized with an `_id` suffix.
+  - **Example**: `cst_id`, `prd_id`.
+
+### **Technical Metadata Columns**
+- System-generated columns used for auditing and tracking load times must use the `dwh_` prefix.
+- **Format**: `dwh_<column_name>`
+  - **Example**: 
+    - `dwh_create_date`: The timestamp when the record was loaded into the DWH (PostgreSQL `CURRENT_TIMESTAMP`).
+    - `dwh_process_id`: ID identifying the specific load batch.
+
+---
+
+## **4. Stored Procedure Naming Conventions**
+
+
+
+- All procedures responsible for loading or transforming data must follow the `load_` prefix pattern.
+- **Format**: `load_<layer>`
+  - **Example**:
+    - `bronze.load_bronze()`: Ingests raw data from CSV files into the Bronze schema.
+    - `silver.load_silver()`: Cleanses and transforms data from Bronze to Silver.
+    - Note: In the Gold layer, we currently utilize **Views**, so a `load_gold` procedure is only required if views are converted into physical tables.
+
+---
+
+## **5. View Naming Conventions**
+
+- Since the Gold Layer currently uses Views, the naming follows the **Gold Rules** (`dim_` and `fact_`). This ensures a seamless transition for end-users if these views are ever materialized into physical tables for performance optimization.
