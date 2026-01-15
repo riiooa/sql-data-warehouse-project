@@ -1,0 +1,64 @@
+# Data Catalog: Gold Layer
+
+## 1. Overview
+The Gold Layer is the final data layer in this Data Warehouse. The data here has been refined through the Silver Layer and is organized using a **Star Schema** (Fact & Dimension) to enable data analysts to easily build reports and dashboards.
+
+---
+
+## 2. Dimension Table: gold.dim_customers
+**Purpose:** Stores comprehensive customer profile information, enriched with demographic data from CRM and geographic data from ERP.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| **customer_key** | INT | Automatically generated *Surrogate Key* uniquely identifying each customer record. |
+| **customer_id** | INT | The original unique customer ID from the CRM source system. |
+| **customer_number** | VARCHAR(50) | Unique customer alphanumeric identifier (e.g., 'NAS12345'). |
+| **first_name** | VARCHAR(50) | Customer's first name. |
+| **last_name** | VARCHAR(50) | Customer's last name. |
+| **country** | VARCHAR(50) | Customer's country of residence (Normalized from ERP). |
+| **marital_status** | VARCHAR(50) | Marital status (e.g., 'Married', 'Single', 'n/a'). |
+| **gender** | VARCHAR(50) | Gender (Primary source: CRM; Fallback: ERP data). |
+| **birthdate** | DATE | Customer's date of birth. |
+| **create_date** | DATE | The date when the customer record was originally created in the system. |
+
+---
+
+## 3. Dimension Table: gold.dim_products
+**Tujuan:** Stores complete product attributes, including categories and sub-categories merged from CRM and ERP data.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| **product_key** | INT | Automatically generated *Surrogate Key* uniquely identifying each product record. |
+| **product_id** | INT | The unique product ID from the CRM system. |
+| **product_number** | VARCHAR(50) | Product identifier code (e.g., 'AR-5381'). |
+| **product_name** | VARCHAR(50) | Descriptive name of the product. |
+| **category_id** | VARCHAR(50) | Product category ID (Linking to the ERP system). |
+| **category** | VARCHAR(50) | High-level product classification (e.g., 'Bikes', 'Accessories'). |
+| **subcategory** | VARCHAR(50) | More specific product classification. |
+| **maintenance** | VARCHAR(50) | Indicates whether the product requires routine maintenance. |
+| **cost** | INT | The unit cost or base price of the product. |
+| **product_line** | VARCHAR(50) | Specific product series or line (e.g., 'Road', 'Mountain', 'Touring'). |
+| **start_date** | DATE | The date when the product became available or was released. |
+
+---
+
+## 4. Fact Table: gold.fact_sales
+**Purpose:** Stores transactional sales data as the central hub for business metrics. This table connects to dimension tables via surrogate keys.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| **order_number** | VARCHAR(50) | Unique sales order identifier (e.g., 'SO54496'). |
+| **product_key** | INT | Foreign key linking to the `gold.dim_products` table. |
+| **customer_key** | INT | Foreign key linking to the `gold.dim_customers` table. |
+| **order_date** | DATE | The date the order was placed. |
+| **shipping_date** | DATE | The date the order was shipped to the customer. |
+| **due_date** | DATE | The payment deadline for the order. |
+| **sales_amount** | INT | Total monetary value of the sales transaction. |
+| **quantity** | INT | Number of units sold in the transaction. |
+| **price** | INT | Unit price of the product at the time of transaction. |
+
+---
+
+## 5. Table Relationships (Data Model)
+- **fact_sales.customer_key** → **dim_customers.customer_key** (Many-to-One)
+- **fact_sales.product_key** → **dim_products.product_key** (Many-to-One)
